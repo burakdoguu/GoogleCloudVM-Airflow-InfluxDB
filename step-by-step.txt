@@ -1,0 +1,209 @@
+In Google Cloud Platform;
+
+1-Create a Compute Engine for Influxdb;
+	E2 8gb memory
+	Access scopes:
+	allow full access to all cloud apis
+	Firewall:
+	Allow HTTP ve HTTPS traffic
+	Boot:
+	Ubuntu 18.04 SSD 20GB
+
+2-Create anoher Compute Engine for Airflow;
+
+	E2 8gb memory
+	Access scopes:
+	allow full access to all cloud apis
+	Firewall:
+	Allow HTTP ve HTTPS traffic
+	Boot:
+	Ubuntu 18.04 SSD 20GB
+
+
+3- In VPC add Firewall Rule tcp:8086 and 8080 separately. You can also reserve to VM's external IPs.
+
+/////// In InfluxDB VM ///////
+
+Go to https://docs.influxdata.com/influxdb/v2.2/install/?t=Linux
+
+Installation InfluxDB:
+
+1- wget https://dl.influxdata.com/influxdb/releases/influxdb2-2.2.0-amd64.deb
+2- sudo dpkg -i influxdb2-2.2.0-amd64.deb
+
+Installation Telegraf:
+
+Go to https://docs.influxdata.com/telegraf/v1.22/install/
+
+wget -qO- https://repos.influxdata.com/influxdb.key | sudo tee /etc/apt/trusted.gpg.d/influxdb.asc >/dev/null
+echo "deb https://repos.influxdata.com/debian stable main" | sudo tee /etc/apt/sources.list.d/influxdb.list
+sudo apt-get update && sudo apt-get install telegraf
+
+apt-get update
+
+
+/// Search in gooogle YOUR-EXTERNAL-IP:8086 and go InfluxDB
+1-Getting Start
+2-set username, organization name and as a bucket type = telegraf
+3- Copy your TOKEN 
+
+Back your InfluxDB VM and go cd /etc/telegraf and follow following steps.
+
+1-vim telegraf.conf
+2-find in output plugins 
+   # # Configuration for sending metrics to InfluxDB
+   # [[outputs.influxdb_v2]]
+
+delete # sign begining of [[outputs.influxdb_v2]]
+
+urls = ["http://127.0.0.1:8086"]
+token = ""
+organization = ""
+bucket = ""
+timeout = "10s"
+user_agent = "telegraf"
+
+enter your token,organization name,bucket name and replace your vm external ip with 127.0.0.1
+if there are any # sign these lines delete to activate lines.
+save and exit with ":wq"
+
+
+
+/////// In Airflow VM ///////
+
+To installation airflow first we have to install docker
+
+Go to ttps://docs.docker.com/engine/install/ubuntu/
+
+
+ sudo apt-get update
+
+ sudo apt-get install \
+    ca-certificates \
+    curl \
+    gnupg \
+    lsb-release
+
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
+
+echo \
+  "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu \
+  $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+
+sudo apt-get update
+
+sudo apt-get install docker-ce docker-ce-cli containerd.io docker-compose-plugin
+
+ sudo apt-get update
+ sudo apt-get install docker-compose-plugin
+
+pt-cache madison docker-compose-plugin
+
+sudo apt-get install docker-compose-plugin=2.3.3~ubuntu-bionic
+
+
+////// After Installations ///////
+
+
+FIRST STEP
+
+we create a folder airflow and create docker-compose.yaml with vim.
+then in airflow folder create dags and plugins folder and finally in dags folder create scripts
+all step you can do with mkdir command.
+open docker-compose.yaml and paste all things in I sent yaml file.
+
+
+apt install docker-compose
+docker-compose up -d
+
+go in schedular container with 
+docker exec -it -u 0 {your-container-first-three-numb} bash
+
+to create a user;
+airflow users create  --username {your_username} --firstname Peter --lastname Parker --role Admin --password admin --email admin@airflow
+
+
+created dags folder go in and create a py file with;
+vim influxdb_dags.py 
+and paste all things in I sent py file
+
+and you have to make a change in py file.
+
+all variable in py file;
+org=
+bucket=
+url=
+token=
+change with yours.
+
+NOTE = in url you have to use your InfluxDB vm externel Ip 
+
+http://vm external:8080
+
+and in influxdb querries change host filter with yours.
+
+ANOTHER NOTE = if you want to write metrics in bigquery just create a dataset and table in bigquery 
+and replace your table_id and project_id
+
+
+
+///// CONFIGURATIONS ////
+
+in py file we use some modules. So we have to import them.
+
+go in again schedular container and follow steps:
+
+pip3 install virtualenv 
+
+.  /opt/bitnami/airflow/venv/bin/activate
+
+
+
+pip3 install influxdb 
+
+pip3 install influxdb-client
+
+pip3 install apache-airflow-providers-influxdb
+
+pip3 install pandas gbq
+
+TO see logs we have to some config more:
+
+*exit and again go in schedular container
+
+apt install vim
+
+cd /opt/bitnami/airflow
+
+vim airflow.cfg
+
+in this file there is a secret key copy them exit container and go airflow container same way
+
+and go airflow.cfg with same path 
+
+find secret key line and change with copied before one.
+
+exit container 
+
+Note : all of this config restart all container
+
+LAST STEP
+
+before we created scripts folder in airflow folder.
+
+create sh file with vim command.sh 
+
+and paste all things in I sent file save and exit
+
+to use properly this file we have to give it a command
+
+chmod +x command.sh
+
+
+
+
+
+
+
+
+
